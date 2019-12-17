@@ -1,26 +1,49 @@
 const { ApolloServer, gql } = require("apollo-server");
 
 const typeDefs = gql`
+  # 1. Phto 타입 정의를 추가
+  type Photo {
+    id: ID!
+    url: String!
+    name: String!
+    description: String
+  }
+
+  # 2. allPhotos에서 Photo 타입을 반환한다.
   type Query {
     totalPhotos: Int!
+    allPhotos: [Photo!]!
   }
 
   type Mutation {
-    postPhoto(name: String!, description: String): Boolean!
+    postPhoto(name: String!, description: String): Photo!
   }
 `;
 
+// 임시 데이터
+let _id = 0;
 let photos = [];
 
 const resolvers = {
   Query: {
-    totalPhotos: () => photos.length
+    totalPhotos: () => photos.length,
+    allPhotos: () => photos
   },
   Mutation: {
     postPhoto: (parent, args) => {
-      photos.push(args);
-      return true;
+      // 2. 새로운 사진을 만들고 id를 부여한다.
+      const newPhoto = {
+        id: _id++,
+        ...args
+      };
+      photos.push(newPhoto);
+
+      // 3. 새로 만든 사진을 반환한다.
+      return newPhoto;
     }
+  },
+  Photo: {
+    url: parent => `http://yoursite.com/img/${parent.id}.jpg`
   }
 };
 
