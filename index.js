@@ -1,12 +1,21 @@
 const { ApolloServer, gql } = require("apollo-server");
 
 const typeDefs = gql`
+  enum PhotoCategory {
+    SELFIE
+    PORTRAIT
+    ACTION
+    LANDSCAPE
+    GRAPHIC
+  }
+
   # 1. Phto 타입 정의를 추가
   type Photo {
     id: ID!
     url: String!
     name: String!
     description: String
+    category: PhotoCategory!
   }
 
   # 2. allPhotos에서 Photo 타입을 반환한다.
@@ -15,8 +24,14 @@ const typeDefs = gql`
     allPhotos: [Photo!]!
   }
 
+  input PostPhotoInput {
+    name: String!
+    category: PhotoCategory = PORTRAIT
+    description: String
+  }
+
   type Mutation {
-    postPhoto(name: String!, description: String): Photo!
+    postPhoto(input: PostPhotoInput!): Photo!
   }
 `;
 
@@ -32,9 +47,10 @@ const resolvers = {
   Mutation: {
     postPhoto: (parent, args) => {
       // 2. 새로운 사진을 만들고 id를 부여한다.
+      console.log(args);
       const newPhoto = {
         id: _id++,
-        ...args
+        ...args.input
       };
       photos.push(newPhoto);
 
