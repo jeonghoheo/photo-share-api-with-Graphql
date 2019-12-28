@@ -21,7 +21,6 @@ async function start() {
   });
 
   const db = client.db(DB_NAME);
-
   const context = { db };
 
   // 2. 서버 인스턴스를 새로 만들기
