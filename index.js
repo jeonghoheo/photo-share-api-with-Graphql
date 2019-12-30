@@ -21,7 +21,13 @@ async function start() {
   });
 
   const db = client.db(DB_NAME);
-  const context = { db };
+  const context = async ({ req }) => {
+    const githubToken = req.headers.authorization;
+    const currentUser = await db.collection("users").findOne({
+      githubToken
+    });
+    return { db, currentUser };
+  };
 
   // 2. 서버 인스턴스를 새로 만들기
   // 3. typeDefs(스키마)와 리졸버를 객체에 넣어 전달하기

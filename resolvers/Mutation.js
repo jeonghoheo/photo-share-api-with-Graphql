@@ -31,8 +31,46 @@ const authorizeWithGithub = async credentials => {
   }
 };
 
+const addFakeUsers = async (root, { count }, { db }) => {
+  const randomUserApi = `https://randomuser.me/api/?results=${count}`;
+  const { results } = await fetch(randomUserApi).then(res => res.json());
+
+  const users = results.map(r => {
+    return {
+      githubLogin: r.login.username,
+      name: `${r.name.first} ${r.name.last}`,
+      avatar: r.picture.thumbnail,
+      githubToken: r.login.sha1
+    };
+  });
+
+  await db.collection("users").insert(users);
+
+  return users;
+};
+
+const fakeUserAuth = async (parent, { githubLogin }, { db }) => {
+  const user = await db.collection("users").findOne({ githubLogin });
+
+  if (!user) {
+    throw new Error(`Can't find user with githubLogin ${githubLogin}`);
+  }
+
+  return {
+    token: user.githubToken,
+    user
+  };
+};
+
 module.exports = {
-  postPhoto: (parent, args) => {
+  fakeUserAuth,
+  addFakeUsers,
+  postPhoto: (parent, args, { db, currentUser }) => {
+    // 1. 컨텍스트에 사용자가 존재하지 않는다면 에러를 던집니다.
+    if (!currentUser) {
+      throw new Error("only an authorized user can post a photo.");
+    }
+
     // 2. 새로운 사진을 만들고 id를 부여한다.
     const newPhoto = {
       id: _id++,
