@@ -65,7 +65,7 @@ const fakeUserAuth = async (parent, { githubLogin }, { db }) => {
 module.exports = {
   fakeUserAuth,
   addFakeUsers,
-  postPhoto: (parent, args, { db, currentUser }) => {
+  postPhoto: async (root, args, { db, currentUser, pubsub }) => {
     // 1. 컨텍스트에 사용자가 존재하지 않는다면 에러를 던집니다.
     if (!currentUser) {
       throw new Error("only an authorized user can post a photo.");
@@ -73,13 +73,15 @@ module.exports = {
 
     // 2. 새로운 사진을 만들고 id를 부여한다.
     const newPhoto = {
-      id: _id++,
+      userID: currentUser.githubLogin,
       ...args.input,
       created: new Date()
     };
-    photos.push(newPhoto);
+    const { insertedIds } = await db.collection("photos").insert(newPhoto);
+    newPhoto.id = insertedIds[0];
 
     // 3. 새로 만든 사진을 반환한다.
+    pubsub.publish("photo-added", { newPhoto });
     return newPhoto;
   },
   githubAuth: async (parent, { code }, { db }) => {
